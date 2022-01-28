@@ -21,6 +21,11 @@
 #define LED2_GPIO_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()
 #define LED2_GPIO_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()
 
+#define LED1_PIN                         GPIO_PIN_5
+#define LED1_GPIO_PORT                   GPIOA
+#define LED1_GPIO_CLK_ENABLE()           __HAL_RCC_GPIOA_CLK_ENABLE()
+#define LED1_GPIO_CLK_DISABLE()          __HAL_RCC_GPIOA_CLK_DISABLE()
+
 //declaration for the GPIO pins for the wakeup Button
 
 #define BLUE_BUTTON_PIN                   GPIO_PIN_13
@@ -53,8 +58,14 @@ EXTI_ConfigTypeDef pEXTiConfig;
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
 void LED2_Init(void);
+void LED1_Init(void);
 void BSP_COM_Init( UART_HandleTypeDef *);
 void LED2_Toggle(void);
+void LED1_Toggle(void);
+
+void LED2_On(void);
+void LED1_Off(void);
+
 int __io_putchar(int);
 HAL_StatusTypeDef Blue_PB_EXT_Init(void);
 
@@ -92,6 +103,9 @@ int main(void)
 
   /* Configure the User LED */
   LED2_Init();
+  LED1_Init();
+  LED2_On();
+  LED1_Off();
   printf("Welcome to button interrupts !\n");
   if ( Blue_PB_EXT_Init() == HAL_ERROR )
     printf("set up button interrupt failed\n");
@@ -159,6 +173,43 @@ void LED2_Init(void)
 }
 
 /*
+
+Turn LED2 on
+
+*/
+void LED2_On(void)
+{
+  HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_SET);
+}
+
+
+
+/*
+Inititalise the LED1 GPIO port
+*/
+
+void LED1_Init(void)
+{
+
+   GPIO_InitTypeDef  gpio_init_structure;
+
+  LED1_GPIO_CLK_ENABLE();
+  /* Configure the GPIO_LED pin */
+  gpio_init_structure.Pin   = LED1_PIN;
+  gpio_init_structure.Mode  = GPIO_MODE_OUTPUT_PP;
+  gpio_init_structure.Pull  = GPIO_NOPULL;
+  gpio_init_structure.Speed = GPIO_SPEED_FREQ_HIGH;
+
+  HAL_GPIO_Init(LED1_GPIO_PORT, &gpio_init_structure);
+}
+
+void LED1_Off(void)
+{
+  HAL_GPIO_WritePin(LED1_GPIO_PORT, LED1_PIN, GPIO_PIN_RESET);
+}
+
+
+/*
  initialise the COM port
 */
 
@@ -200,7 +251,7 @@ HAL_StatusTypeDef Blue_PB_EXT_Init()
   BLUE_BUTTON_GPIO_CLK_ENABLE();
   __HAL_RCC_SYSCFG_CLK_ENABLE();
  
-  /* Configure Button pin as input */
+  //Configure Button pin as input
   gpio_init_structure.Pin = BLUE_BUTTON_PIN;
   gpio_init_structure.Mode = GPIO_MODE_INPUT;
   gpio_init_structure.Pull = GPIO_PULLUP;
@@ -228,17 +279,23 @@ HAL_StatusTypeDef Blue_PB_EXT_Init()
 //EXTI15_10_IRQHandler ISR
 void  EXTI15_10_IRQHandler() 
 
-{ 
+{
     LED2_Toggle();
+    LED1_Toggle();
     //clean up 
     HAL_EXTI_IRQHandler(&hexti);
-
 } 
 
 void LED2_Toggle(void)
 {
   HAL_GPIO_TogglePin(LED2_GPIO_PORT, LED2_PIN);
 }
+
+void LED1_Toggle(void)
+{
+  HAL_GPIO_TogglePin(LED1_GPIO_PORT, LED1_PIN);
+}
+
 
 int __io_putchar(int ch)
 {
